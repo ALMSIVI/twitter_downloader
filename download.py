@@ -42,11 +42,11 @@ def get_user_id(username):
     
 
 def get_likes(url, params):
+    out_path = Path(out_dir)
+
     resp = requests.get(url, auth=bearer_oauth, params=params)
     verify_resp(resp)
     data = resp.json()
-
-    out_path = Path(out_dir)
 
     while data['meta']['result_count'] > 0:
         # data['data'] contains the tweets and media keys.
@@ -76,9 +76,9 @@ def get_likes(url, params):
             if 'attachments' in like:
                 for media_key in like['attachments']['media_keys']:
                     if media_key in media_dict:
-                        url = media_dict[media_key]
-                        extension = url[url.rfind('.'):]
-                        resp = requests.get(url, stream=True)
+                        media_url = media_dict[media_key]
+                        extension = media_url[media_url.rfind('.'):]
+                        resp = requests.get(media_url, stream=True)
                         verify_resp(resp)
                         resp.raw.decode_content = True
                         image_path = tweet_path / (media_key + extension)
@@ -88,6 +88,8 @@ def get_likes(url, params):
 
         if 'next_token' in data['meta']:
             resp = requests.get(url, auth=bearer_oauth, params=params | {'pagination_token': data['meta']['next_token']})
+            verify_resp(resp)
+            data = resp.json()
         else:
             break
 
